@@ -26,11 +26,11 @@ models:
     max_output_tokens: 350
     temperature: 0.0
 
-  - id: minimax-m3@opencode
+  - id: kimi-k2.6@opencode
     provider: opencode
-    model_id: minimax-m3
-    canonical_model: MiniMax M3
-    endpoint_type: messages
+    model_id: kimi-k2.6
+    canonical_model: Kimi K2.6
+    endpoint_type: chat_completions
     enabled: true
     max_output_tokens: 350
     temperature: 0.0
