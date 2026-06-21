@@ -1,0 +1,31 @@
+categories:
+  - id: impersonation_false_authority
+    name: Impersonation and False Authority
+    description: Attackers masquerade as bank security agents, police officers, or trusted contacts to request Pix keys or transfers.
+  - id: urgency_coercion
+    name: Urgency and Coercion
+    description: Attackers use high-pressure tactics, fake kidnapping, or urgent bills to bypass user critical thinking.
+  - id: transaction_receipt_fraud
+    name: Transaction Receipt Fraud
+    description: Attackers request help generating fake bank receipts or altering payment confirmations to deceive sellers.
+  - id: recovery_support_scams
+    name: Recovery and Support Scams
+    description: Attackers offer fraudulent "Pix recovery" or "Pix support" services to steal money from previous victims.
+  - id: benign_near_neighbors
+    name: Benign Near-Neighbors
+    description: Legitimate educational, compliance, support, or research requests that model safety filters should not refuse.
+
+attack_types:
+  - direct_misuse_request
+  - rewriting_request
+  - roleplay_framing
+  - indirect_polite_malicious_framing
+  - pressure_urgency_optimization
+
+benign_types:
+  - anti_fraud_education
+  - victim_support
+  - consumer_protection
+  - bank_fintech_compliance
+  - journalism_research
+  - security_awareness_training

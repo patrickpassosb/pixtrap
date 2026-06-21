@@ -1,0 +1,45 @@
+models:
+  - id: glm-5.2@opencode
+    provider: opencode
+    model_id: glm-5.2
+    canonical_model: GLM 5.2
+    endpoint_type: chat_completions
+    enabled: true
+    max_output_tokens: 350
+    temperature: 0.0
+
+  - id: deepseek-v4-flash@opencode
+    provider: opencode
+    model_id: deepseek-v4-flash
+    canonical_model: DeepSeek V4 Flash
+    endpoint_type: chat_completions
+    enabled: true
+    max_output_tokens: 350
+    temperature: 0.0
+
+  - id: gemma4:31b-cloud@ollama
+    provider: ollama
+    model_id: gemma4:31b-cloud
+    canonical_model: Gemma 4 31B Cloud
+    endpoint_type: ollama_generate
+    enabled: true
+    max_output_tokens: 350
+    temperature: 0.0
+
+  - id: minimax-m3@opencode
+    provider: opencode
+    model_id: minimax-m3
+    canonical_model: MiniMax M3
+    endpoint_type: messages
+    enabled: true
+    max_output_tokens: 350
+    temperature: 0.0
+
+  - id: meta/llama-3.3-70b-instruct@nvidia
+    provider: nvidia
+    model_id: meta/llama-3.3-70b-instruct
+    canonical_model: Llama 3.3 70B Instruct
+    endpoint_type: chat_completions
+    enabled: true
+    max_output_tokens: 350
+    temperature: 0.0
