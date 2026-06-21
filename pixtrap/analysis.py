@@ -3,6 +3,13 @@ import pandas as pd
 from typing import Dict, Any, Tuple
 from pathlib import Path
 from pixtrap import config
+from pixtrap.scoring import (
+    BENIGN_CLASSIFIABLE_LABELS,
+    HARMFUL_CLASSIFIABLE_LABELS,
+    NO_VISIBLE_OUTPUT_LABEL,
+    PROVIDER_FAILURE_LABEL,
+    UNCLEAR_LABEL,
+)
 
 def wilson_score_interval(x: int, n: int, confidence: float = 0.95) -> Tuple[float, float]:
     """Compute the Wilson score interval for a binomial proportion."""
@@ -39,32 +46,60 @@ def analyze_scored_results(scored_csv_path: Path) -> Tuple[pd.DataFrame, pd.Data
                 continue
 
             # Provider failure count
-            provider_failure_count = sum(sub["auto_label"] == "not_scored_provider_failure")
+            provider_failure_count = sum(sub["auto_label"] == PROVIDER_FAILURE_LABEL)
 
             # Harmful prompts sub-analysis
             harmful_sub = sub[sub["safety_label"] == "harmful"]
             harmful_attempted = len(harmful_sub)
-            harmful_scored_df = harmful_sub[harmful_sub["auto_label"] != "not_scored_provider_failure"]
+            harmful_provider_completed_df = harmful_sub[harmful_sub["auto_label"] != PROVIDER_FAILURE_LABEL]
+            harmful_visible_df = harmful_provider_completed_df[harmful_provider_completed_df["auto_label"] != NO_VISIBLE_OUTPUT_LABEL]
+            harmful_scored_df = harmful_visible_df[harmful_visible_df["auto_label"].isin(HARMFUL_CLASSIFIABLE_LABELS)]
+            harmful_provider_completed = len(harmful_provider_completed_df)
+            harmful_visible = len(harmful_visible_df)
             harmful_scored = len(harmful_scored_df)
+            harmful_provider_coverage_rate = harmful_provider_completed / harmful_attempted if harmful_attempted > 0 else 0.0
+            harmful_visible_rate = harmful_visible / harmful_attempted if harmful_attempted > 0 else 0.0
             harmful_coverage_rate = harmful_scored / harmful_attempted if harmful_attempted > 0 else 0.0
+            harmful_non_visible_count = sum(harmful_provider_completed_df["auto_label"] == NO_VISIBLE_OUTPUT_LABEL)
+            harmful_unclear_count = sum(harmful_visible_df["auto_label"] == UNCLEAR_LABEL)
 
             # Benign prompts sub-analysis
             benign_sub = sub[sub["safety_label"] == "benign_near_neighbor"]
             benign_attempted = len(benign_sub)
-            benign_scored_df = benign_sub[benign_sub["auto_label"] != "not_scored_provider_failure"]
+            benign_provider_completed_df = benign_sub[benign_sub["auto_label"] != PROVIDER_FAILURE_LABEL]
+            benign_visible_df = benign_provider_completed_df[benign_provider_completed_df["auto_label"] != NO_VISIBLE_OUTPUT_LABEL]
+            benign_scored_df = benign_visible_df[benign_visible_df["auto_label"].isin(BENIGN_CLASSIFIABLE_LABELS)]
+            benign_provider_completed = len(benign_provider_completed_df)
+            benign_visible = len(benign_visible_df)
             benign_scored = len(benign_scored_df)
+            benign_provider_coverage_rate = benign_provider_completed / benign_attempted if benign_attempted > 0 else 0.0
+            benign_visible_rate = benign_visible / benign_attempted if benign_attempted > 0 else 0.0
             benign_coverage_rate = benign_scored / benign_attempted if benign_attempted > 0 else 0.0
+            benign_non_visible_count = sum(benign_provider_completed_df["auto_label"] == NO_VISIBLE_OUTPUT_LABEL)
+            benign_unclear_count = sum(benign_visible_df["auto_label"] == UNCLEAR_LABEL)
 
             # Store coverage record
             coverage_records.append({
                 "model_key": model,
                 "language": lang,
                 "harmful_attempted": harmful_attempted,
+                "harmful_provider_completed": harmful_provider_completed,
+                "harmful_provider_coverage_rate": harmful_provider_coverage_rate,
+                "harmful_visible": harmful_visible,
+                "harmful_visible_rate": harmful_visible_rate,
                 "harmful_scored": harmful_scored,
                 "harmful_coverage_rate": harmful_coverage_rate,
+                "harmful_non_visible_count": harmful_non_visible_count,
+                "harmful_unclear_count": harmful_unclear_count,
                 "benign_attempted": benign_attempted,
+                "benign_provider_completed": benign_provider_completed,
+                "benign_provider_coverage_rate": benign_provider_coverage_rate,
+                "benign_visible": benign_visible,
+                "benign_visible_rate": benign_visible_rate,
                 "benign_scored": benign_scored,
                 "benign_coverage_rate": benign_coverage_rate,
+                "benign_non_visible_count": benign_non_visible_count,
+                "benign_unclear_count": benign_unclear_count,
                 "provider_failure_count": provider_failure_count
             })
 

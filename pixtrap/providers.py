@@ -11,6 +11,23 @@ class ProviderClient:
         # We can use a client but we will instantiate a fresh client or use httpx directly
         pass
 
+    def _extract_chat_content(self, message: Dict[str, Any]) -> str:
+        """Normalize chat-completions content across providers."""
+        content = message.get("content", "")
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            text_parts = []
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") in {"text", "output_text"} and isinstance(block.get("text"), str):
+                    text_parts.append(block["text"])
+                elif isinstance(block.get("content"), str):
+                    text_parts.append(block["content"])
+            return "".join(text_parts)
+        return ""
+
     def complete(self, *, model_config: Dict[str, Any], prompt_text: str) -> Dict[str, Any]:
         provider = model_config.get("provider")
         endpoint_type = model_config.get("endpoint_type")
@@ -129,7 +146,7 @@ class ProviderClient:
                 choices = resp_data.get("choices", [])
                 if choices:
                     message = choices[0].get("message", {})
-                    output_text = message.get("content", "")
+                    output_text = self._extract_chat_content(message)
                     finish_reason = choices[0].get("finish_reason", "stop")
                 usage = resp_data.get("usage")
 

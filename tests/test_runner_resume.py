@@ -36,6 +36,33 @@ def test_chat_completions_success(client):
         assert res["usage"]["total_tokens"] == 15
         mock_post.assert_called_once()
 
+def test_chat_completions_null_content_is_normalized(client):
+    model_config = {
+        "provider": "opencode",
+        "model_id": "kimi-k2.6",
+        "endpoint_type": "chat_completions",
+        "max_output_tokens": 100,
+        "temperature": 0.0
+    }
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [{
+            "message": {"content": None, "reasoning": "internal reasoning"},
+            "finish_reason": "length"
+        }],
+        "usage": {
+            "prompt_tokens": 10,
+            "completion_tokens": 5,
+            "total_tokens": 15
+        }
+    }
+
+    with patch("httpx.post", return_value=mock_response):
+        res = client.complete(model_config=model_config, prompt_text="Oi")
+        assert res["status"] == "completed"
+        assert res["output_text"] == ""
+
 def test_messages_success(client):
     model_config = {
         "provider": "opencode",
@@ -175,4 +202,3 @@ def test_runner_resume(tmp_path):
                 # Should only call complete for p2 (since p1 is already completed)
                 mock_complete.assert_called_once()
                 assert mock_complete.call_args[1]["prompt_text"] == "p2_text"
-

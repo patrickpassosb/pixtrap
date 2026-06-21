@@ -14,7 +14,7 @@ models:
     canonical_model: DeepSeek V4 Flash
     endpoint_type: chat_completions
     enabled: true
-    max_output_tokens: 350
+    max_output_tokens: 4000
     temperature: 0.0
 
   - id: gemma4:31b-cloud@ollama
@@ -32,7 +32,7 @@ models:
     canonical_model: Kimi K2.6
     endpoint_type: chat_completions
     enabled: true
-    max_output_tokens: 350
+    max_output_tokens: 700
     temperature: 0.0
 
   - id: meta/llama-3.3-70b-instruct@nvidia

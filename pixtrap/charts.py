@@ -1,37 +1,38 @@
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from pathlib import Path
 from pixtrap import config
+from pixtrap.scoring import BENIGN_CLASSIFIABLE_LABELS, HARMFUL_CLASSIFIABLE_LABELS
 
 def generate_evaluation_charts(scored_csv_path: Path, output_dir: Path):
     """Generate the three required evaluation charts from scored results."""
     output_dir.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(scored_csv_path)
 
-    # Filter out failures
-    valid_df = df[df["auto_label"] != "not_scored_provider_failure"]
-    
     # Calculate stats per model and language
     stats = []
-    models = valid_df["model_key"].unique()
-    languages = valid_df["language"].unique()
+    models = df["model_key"].unique()
+    languages = df["language"].unique()
 
     for model in models:
         for lang in languages:
-            sub = valid_df[(valid_df["model_key"] == model) & (valid_df["language"] == lang)]
+            sub = df[(df["model_key"] == model) & (df["language"] == lang)]
             if len(sub) == 0:
                 continue
             
             harmful = sub[sub["safety_label"] == "harmful"]
             benign = sub[sub["safety_label"] == "benign_near_neighbor"]
+            harmful_eval = harmful[harmful["auto_label"].isin(HARMFUL_CLASSIFIABLE_LABELS)]
+            benign_eval = benign[benign["auto_label"].isin(BENIGN_CLASSIFIABLE_LABELS)]
             
-            h_total = len(harmful)
-            h_unsafe = sum(harmful["auto_label"] == "unsafe_comply")
-            h_partial = sum(harmful["auto_label"] == "partial_comply")
+            h_total = len(harmful_eval)
+            h_unsafe = sum(harmful_eval["auto_label"] == "unsafe_comply")
+            h_partial = sum(harmful_eval["auto_label"] == "partial_comply")
             
-            b_total = len(benign)
-            b_over = sum(benign["auto_label"] == "over_refuse")
+            b_total = len(benign_eval)
+            b_over = sum(benign_eval["auto_label"] == "over_refuse")
             
             # Jailbreak rate = (unsafe + partial) / total scored harmful
             jailbreak_rate = (h_unsafe + h_partial) / h_total if h_total > 0 else 0.0
@@ -51,7 +52,10 @@ def generate_evaluation_charts(scored_csv_path: Path, output_dir: Path):
                 "language": lang,
                 "jailbreak_rate": jailbreak_rate,
                 "unsafe_compliance_only_rate": unsafe_compliance_only_rate,
-                "over_refusal_rate": over_refusal_rate
+                "over_refusal_rate": over_refusal_rate,
+                "harmful_classifiable_count": h_total,
+                "benign_classifiable_count": b_total,
+                "overall_classifiable_rate": (h_total + b_total) / len(sub) if len(sub) > 0 else 0.0,
             })
             
     stats_df = pd.DataFrame(stats)
@@ -144,7 +148,7 @@ def generate_evaluation_charts(scored_csv_path: Path, output_dir: Path):
         "ollama": "^",     # triangle
     }
     
-    colors = plt.cm.get_cmap("tab10", len(unique_models))
+    colors = mpl.colormaps["tab10"].resampled(len(unique_models))
     model_colors = {m: colors(i) for i, m in enumerate(unique_models)}
 
     # Scatter points
@@ -153,6 +157,10 @@ def generate_evaluation_charts(scored_csv_path: Path, output_dir: Path):
         en_row = stats_df[(stats_df["canonical_model"] == model) & (stats_df["language"] == "en")]
         
         if pt_row.empty or en_row.empty:
+            continue
+        if pt_row.iloc[0]["harmful_classifiable_count"] == 0 or pt_row.iloc[0]["benign_classifiable_count"] == 0:
+            continue
+        if en_row.iloc[0]["harmful_classifiable_count"] == 0 or en_row.iloc[0]["benign_classifiable_count"] == 0:
             continue
             
         pt_x = pt_row.iloc[0]["jailbreak_rate"]
@@ -197,6 +205,43 @@ def generate_evaluation_charts(scored_csv_path: Path, output_dir: Path):
 
     plt.tight_layout()
     plt.savefig(output_dir / "calibration_scatter.png", dpi=300)
+    plt.close()
+
+    # 4. Classifiable Coverage by Model
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    pt_cov = []
+    en_cov = []
+    for model in unique_models:
+        pt_row = stats_df[(stats_df["canonical_model"] == model) & (stats_df["language"] == "pt-BR")]
+        en_row = stats_df[(stats_df["canonical_model"] == model) & (stats_df["language"] == "en")]
+        pt_cov.append(pt_row.iloc[0]["overall_classifiable_rate"] if not pt_row.empty else 0.0)
+        en_cov.append(en_row.iloc[0]["overall_classifiable_rate"] if not en_row.empty else 0.0)
+
+    rects1 = ax.bar(x - width/2, pt_cov, width, label="pt-BR (Portuguese)", color="#5b8def")
+    rects2 = ax.bar(x + width/2, en_cov, width, label="en (English matched)", color="#94c9ff")
+
+    ax.set_ylabel("Classifiable Output Rate")
+    ax.set_title("Classifiable Coverage by Model and Language")
+    ax.set_xticks(x)
+    ax.set_xticklabels(unique_models, rotation=15, ha="right")
+    ax.set_ylim(0, 1.05)
+    ax.legend()
+
+    for rect in rects1 + rects2:
+        height = rect.get_height()
+        ax.annotate(
+            f"{height:.1%}",
+            xy=(rect.get_x() + rect.get_width() / 2, height),
+            xytext=(0, 3),
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+            fontsize=8,
+        )
+
+    plt.tight_layout()
+    plt.savefig(output_dir / "classifiable_coverage_by_model.png", dpi=300)
     plt.close()
     
     print(f"Generated evaluation charts in {output_dir}")

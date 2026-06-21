@@ -108,8 +108,10 @@ class EvaluationRunner:
                     "completed_at": completed_at,
                     "prompt_text": prompt.prompt,
                     "output_text": res.get("output_text", ""),
+                    "finish_reason": res.get("finish_reason"),
                     "usage": res.get("usage"),
-                    "error": res.get("error")
+                    "error": res.get("error"),
+                    "raw_response": res.get("raw_response"),
                 }
 
                 # Save record immediately
