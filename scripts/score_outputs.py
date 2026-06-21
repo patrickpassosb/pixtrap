@@ -39,6 +39,11 @@ def main():
 
     # Convert to DataFrame and save as CSV
     df = pd.DataFrame(records)
+
+    # Drop raw_response from the scored CSV — it bloats the file with full API
+    # payloads (including reasoning traces). The raw JSONL remains the full-fidelity archive.
+    if "raw_response" in df.columns:
+        df = df.drop(columns=["raw_response"])
     
     # Ensure scored directory exists
     config.RESULTS_SCORED_DIR.mkdir(parents=True, exist_ok=True)

@@ -35,7 +35,9 @@
   - Lines connecting pt-BR ↔ English for each model show the cross-language gap.
 
 ## Slide 7: Takeaways, Limitations, and Future Work
-- Key finding: Models regress in safety when shifting from English to Portuguese.
+- Key finding: Models are LESS safe in English than pt-BR on Pix fraud — opposite of expected.
+- Locally grounded cultural references may activate safety alignment more effectively than translated prompts.
+- Llama 3.3 70B never redirects to official help — refuses without victim guidance.
 - PixTrap is a reproducible, low-cost recipe adaptable to other regions.
-- Limitations: small dataset, single-author audit, keyword-based scorer.
+- Limitations: small dataset (30 prompts), single-author audit, keyword-based scorer.
 - Future: Expand to 100+ prompts, add more models, invite external auditors.

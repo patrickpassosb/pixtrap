@@ -15,7 +15,7 @@ This document describes the additional materials available alongside the PixTrap
 ## Extended Appendix
 - Coverage summary tables (`results/scored/coverage_summary.csv`).
 - Uncertainty and confidence interval tables (`results/scored/uncertainty_summary.csv`).
-- Full scored output CSV (`results/scored/results_pilot_scored.csv`).
+- Full scored output CSV (`results/scored/results_final_scored.csv`).
 - Manual audit candidate list and review file (`results/scored/manual_review.csv`).
 
 ## Dataset Access for Researchers

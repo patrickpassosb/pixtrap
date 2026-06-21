@@ -28,6 +28,52 @@ class ProviderClient:
             return "".join(text_parts)
         return ""
 
+    def _parse_response(self, resp_data: Dict[str, Any], endpoint_type: str) -> tuple:
+        """Parse a successful API response into (output_text, finish_reason, usage)."""
+        output_text = ""
+        finish_reason = "stop"
+        usage = None
+
+        if endpoint_type == "chat_completions":
+            choices = resp_data.get("choices", [])
+            if choices:
+                message = choices[0].get("message", {})
+                output_text = self._extract_chat_content(message)
+                finish_reason = choices[0].get("finish_reason", "stop")
+            usage = resp_data.get("usage")
+
+        elif endpoint_type == "messages":
+            content = resp_data.get("content", [])
+            if isinstance(content, list):
+                text_parts = []
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        text_parts.append(block.get("text", ""))
+                output_text = "".join(text_parts)
+            elif isinstance(content, str):
+                output_text = content
+            finish_reason = resp_data.get("stop_reason")
+            usage_data = resp_data.get("usage", {})
+            if usage_data:
+                usage = {
+                    "prompt_tokens": usage_data.get("input_tokens", 0),
+                    "completion_tokens": usage_data.get("output_tokens", 0),
+                    "total_tokens": usage_data.get("input_tokens", 0) + usage_data.get("output_tokens", 0)
+                }
+
+        elif endpoint_type == "ollama_generate":
+            output_text = resp_data.get("response", "")
+            finish_reason = resp_data.get("done_reason", "stop")
+            prompt_eval_count = resp_data.get("prompt_eval_count", 0)
+            eval_count = resp_data.get("eval_count", 0)
+            usage = {
+                "prompt_tokens": prompt_eval_count,
+                "completion_tokens": eval_count,
+                "total_tokens": prompt_eval_count + eval_count
+            }
+
+        return output_text, finish_reason, usage
+
     def complete(self, *, model_config: Dict[str, Any], prompt_text: str) -> Dict[str, Any]:
         provider = model_config.get("provider")
         endpoint_type = model_config.get("endpoint_type")
@@ -138,49 +184,33 @@ class ProviderClient:
 
             # Success response parsing
             resp_data = response.json()
-            output_text = ""
-            finish_reason = "stop"
-            usage = None
+            output_text, finish_reason, usage = self._parse_response(resp_data, endpoint_type)
 
-            if endpoint_type == "chat_completions":
-                choices = resp_data.get("choices", [])
-                if choices:
-                    message = choices[0].get("message", {})
-                    output_text = self._extract_chat_content(message)
-                    finish_reason = choices[0].get("finish_reason", "stop")
-                usage = resp_data.get("usage")
-
-            elif endpoint_type == "messages":
-                # Anthropic style messages output structure: {"content": [{"type": "text", "text": "..."}], "usage": ...}
-                content = resp_data.get("content", [])
-                if isinstance(content, list):
-                    text_parts = []
-                    for block in content:
-                        if isinstance(block, dict) and block.get("type") == "text":
-                            text_parts.append(block.get("text", ""))
-                    output_text = "".join(text_parts)
-                elif isinstance(content, str):
-                    output_text = content
-                finish_reason = resp_data.get("stop_reason")
-                usage_data = resp_data.get("usage", {})
-                if usage_data:
-                    # Normalize token names
-                    usage = {
-                        "prompt_tokens": usage_data.get("input_tokens", 0),
-                        "completion_tokens": usage_data.get("output_tokens", 0),
-                        "total_tokens": usage_data.get("input_tokens", 0) + usage_data.get("output_tokens", 0)
-                    }
-
-            elif endpoint_type == "ollama_generate":
-                output_text = resp_data.get("response", "")
-                finish_reason = resp_data.get("done_reason", "stop")
-                prompt_eval_count = resp_data.get("prompt_eval_count", 0)
-                eval_count = resp_data.get("eval_count", 0)
-                usage = {
-                    "prompt_tokens": prompt_eval_count,
-                    "completion_tokens": eval_count,
-                    "total_tokens": prompt_eval_count + eval_count
-                }
+            # Reasoning-exhaustion guard: if chat_completions returned empty
+            # visible output (likely a reasoning model that spent the entire
+            # token budget on internal reasoning), retry once with a higher cap.
+            if endpoint_type == "chat_completions" and not output_text:
+                raised_budget = min(max_tokens * 4, 8000)
+                if raised_budget > max_tokens:
+                    logger.info(
+                        "Empty visible output with max_tokens=%d, retrying with %d for model %s",
+                        max_tokens, raised_budget, model_id,
+                    )
+                    payload["max_tokens"] = raised_budget
+                    retry_response = httpx.post(url, headers=headers, json=payload, timeout=timeout)
+                    if retry_response.status_code == 200:
+                        retry_data = retry_response.json()
+                        retry_text, retry_fr, retry_usage = self._parse_response(retry_data, endpoint_type)
+                        if retry_text:
+                            return {
+                                "status": "completed",
+                                "provider": provider,
+                                "model_id": model_id,
+                                "output_text": retry_text,
+                                "finish_reason": retry_fr,
+                                "usage": retry_usage,
+                                "raw_response": retry_data,
+                            }
 
             return {
                 "status": "completed",

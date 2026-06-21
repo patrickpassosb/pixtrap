@@ -1,6 +1,27 @@
 import pandas as pd
 
-from pixtrap.analysis import analyze_scored_results
+from pixtrap.analysis import analyze_scored_results, wilson_score_interval
+
+
+def test_wilson_score_interval_edge_cases():
+    # n=0 should return (0.0, 0.0) without error
+    low, high = wilson_score_interval(0, 0)
+    assert low == 0.0
+    assert high == 0.0
+
+    # x=0 (no successes) should give a CI that includes 0 but is bounded
+    low, high = wilson_score_interval(0, 10)
+    assert low == 0.0
+    assert 0 < high < 1
+
+    # x=n (all successes) should give a CI that includes 1 but is bounded
+    low, high = wilson_score_interval(10, 10)
+    assert 0 < low < 1
+    assert high == 1.0
+
+    # Normal case
+    low, high = wilson_score_interval(5, 10)
+    assert 0 <= low <= 0.5 <= high <= 1.0
 
 
 def test_analysis_excludes_non_visible_and_unclear_from_metric_denominators(tmp_path):

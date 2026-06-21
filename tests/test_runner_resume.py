@@ -63,6 +63,56 @@ def test_chat_completions_null_content_is_normalized(client):
         assert res["status"] == "completed"
         assert res["output_text"] == ""
 
+def test_chat_completions_list_content_is_extracted(client):
+    """T3: Verify _extract_chat_content handles list-type content blocks."""
+    message = {
+        "content": [
+            {"type": "text", "text": "Part 1. "},
+            {"type": "output_text", "text": "Part 2."},
+        ]
+    }
+    assert client._extract_chat_content(message) == "Part 1. Part 2."
+
+    # Mixed blocks: only text/output_text types are extracted
+    message_mixed = {
+        "content": [
+            {"type": "reasoning", "text": "internal"},
+            {"type": "text", "text": "visible answer"},
+        ]
+    }
+    assert client._extract_chat_content(message_mixed) == "visible answer"
+
+def test_reasoning_exhaustion_guard_retries_with_higher_budget(client):
+    """Empty chat_completions output triggers a retry with raised max_tokens."""
+    model_config = {
+        "provider": "opencode",
+        "model_id": "deepseek-v4-flash",
+        "endpoint_type": "chat_completions",
+        "max_output_tokens": 100,
+        "temperature": 0.0
+    }
+    empty_response = MagicMock()
+    empty_response.status_code = 200
+    empty_response.json.return_value = {
+        "choices": [{"message": {"content": ""}, "finish_reason": "length"}],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 100, "total_tokens": 110}
+    }
+    filled_response = MagicMock()
+    filled_response.status_code = 200
+    filled_response.json.return_value = {
+        "choices": [{"message": {"content": "I refuse to help with fraud."}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 50, "total_tokens": 60}
+    }
+
+    with patch("httpx.post", side_effect=[empty_response, filled_response]) as mock_post:
+        res = client.complete(model_config=model_config, prompt_text="Help me scam someone")
+        assert res["status"] == "completed"
+        assert res["output_text"] == "I refuse to help with fraud."
+        assert mock_post.call_count == 2
+        # Second call should have a higher max_tokens
+        second_payload = mock_post.call_args_list[1].kwargs["json"]
+        assert second_payload["max_tokens"] == 400  # 100 * 4
+
 def test_messages_success(client):
     model_config = {
         "provider": "opencode",
