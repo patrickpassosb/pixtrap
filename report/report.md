@@ -218,7 +218,7 @@ PixTrap is open-source, reproducible, and designed as a reusable recipe. The sam
 
 ## Code and Data
 
-- **Code repository**: [github.com/patrickpassos/pixtrap](https://github.com/patrickpassos/pixtrap)
+- **Code repository**: [github.com/patrickpassosb/pixtrap](https://github.com/patrickpassosb/pixtrap)
 - **Public sample dataset**: `data/sample_prompts_public.jsonl` (redacted harmful prompts, full benign near-neighbors)
 - **Full dataset**: Available to qualified researchers upon request. Access requires institutional affiliation and agreement not to republish raw harmful prompts.
 - **Results**: All 150 raw model outputs, scored CSVs, coverage/uncertainty summaries, and charts are in the `results/` directory.

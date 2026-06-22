@@ -12,7 +12,7 @@
   - Email: patrick.passos@example.com (replace with user email)
   - Discord Username: patrick_passos
   - Google Scholar: N/A
-- **Code Repository**: [GitHub Link] (e.g. https://github.com/patrickpassos/pixtrap)
-- **Additional Material**: [GitHub Release Link or Public Sample Dataset Link]
+- **Code Repository**: https://github.com/patrickpassosb/pixtrap
+- **Additional Material**: https://github.com/patrickpassosb/pixtrap (public sample dataset, full code, results, charts)
 - **Dual-Use / Safety Redaction Note**: 
   To prevent this repository from serving as a source of optimized scam templates, we do not release the raw harmful prompts publicly. The public repository includes the complete evaluation code, scoring criteria, and a sanitized public sample dataset (`data/sample_prompts_public.jsonl`) with redacted harmful prompt content. Researchers can request access to the unredacted evaluation sets for validation purposes by contacting the author.
