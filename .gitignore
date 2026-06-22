@@ -38,17 +38,7 @@ env/
 
 # Project specific
 .env
-results/raw/*
-!results/raw/.gitkeep
-results/scored/*
-!results/scored/.gitkeep
-results/charts/*
-!results/charts/.gitkeep
-submission/final_report/*
-!submission/final_report/.gitkeep
-submission/slideshow/*
-!submission/slideshow/.gitkeep
-submission/project_image/*
-!submission/project_image/.gitkeep
+.omx/
 
 .omx/
+*.~lock.*

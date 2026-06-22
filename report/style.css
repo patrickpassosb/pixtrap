@@ -1,0 +1,161 @@
+/* PixTrap academic paper styling for PDF */
+@page {
+    margin: 2cm 2cm 2cm 2cm;
+    @bottom-center {
+        content: counter(page);
+        font-size: 9pt;
+        color: #666;
+    }
+}
+
+body {
+    font-family: "Georgia", "Times New Roman", serif;
+    font-size: 10pt;
+    line-height: 1.35;
+    color: #1a1a2e;
+    max-width: 100%;
+}
+
+h1 {
+    font-family: "Helvetica", "Arial", sans-serif;
+    font-size: 16pt;
+    font-weight: bold;
+    color: #16161d;
+    text-align: center;
+    margin-bottom: 0.3em;
+    line-height: 1.15;
+}
+
+h2 {
+    font-family: "Helvetica", "Arial", sans-serif;
+    font-size: 12pt;
+    font-weight: bold;
+    color: #16161d;
+    margin-top: 1em;
+    margin-bottom: 0.3em;
+    border-bottom: 0.5px solid #ddd;
+    padding-bottom: 0.1em;
+}
+
+h3 {
+    font-family: "Helvetica", "Arial", sans-serif;
+    font-size: 10.5pt;
+    font-weight: bold;
+    color: #333;
+    margin-top: 0.8em;
+    margin-bottom: 0.2em;
+}
+
+p {
+    margin-bottom: 0.5em;
+    text-align: justify;
+}
+
+strong {
+    color: #16161d;
+}
+
+em {
+    color: #333;
+}
+
+code {
+    font-family: "Courier New", monospace;
+    font-size: 10pt;
+    background: #f4f4f8;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+    color: #c0392b;
+}
+
+pre {
+    background: #f4f4f8;
+    padding: 0.8em;
+    border-radius: 4px;
+    border-left: 3px solid #ff6b35;
+    overflow-x: auto;
+    font-size: 10pt;
+}
+
+pre code {
+    background: none;
+    padding: 0;
+    color: #1a1a2e;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.6em 0;
+    font-size: 9pt;
+}
+
+th {
+    background: #16161d;
+    color: #fff;
+    font-family: "Helvetica", "Arial", sans-serif;
+    font-weight: bold;
+    padding: 0.3em 0.6em;
+    text-align: left;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+td {
+    padding: 0.25em 0.6em;
+    border-bottom: 0.5px solid #ddd;
+}
+
+tr:nth-child(even) td {
+    background: #f8f8fc;
+}
+
+/* Table captions (italic paragraphs after tables) */
+table + p em {
+    display: block;
+    text-align: center;
+    font-size: 9pt;
+    color: #666;
+    margin-top: -0.5em;
+    margin-bottom: 1em;
+}
+
+a {
+    color: #ff6b35;
+    text-decoration: none;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 1.5em 0;
+}
+
+ul, ol {
+    padding-left: 1.5em;
+    margin-bottom: 0.8em;
+}
+
+li {
+    margin-bottom: 0.3em;
+    text-align: justify;
+}
+
+/* Abstract styling */
+blockquote {
+    border-left: 3px solid #ff6b35;
+    padding-left: 1em;
+    margin: 1em 0;
+    font-style: italic;
+    color: #444;
+}
+
+/* References */
+h2 + ol, h2 + ul {
+    font-size: 10pt;
+}
+
+ol li {
+    margin-bottom: 0.5em;
+}

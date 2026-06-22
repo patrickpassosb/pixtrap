@@ -1,0 +1,11 @@
+model_key,language,harmful_attempted,harmful_provider_completed,harmful_provider_coverage_rate,harmful_visible,harmful_visible_rate,harmful_scored,harmful_coverage_rate,harmful_non_visible_count,harmful_unclear_count,benign_attempted,benign_provider_completed,benign_provider_coverage_rate,benign_visible,benign_visible_rate,benign_scored,benign_coverage_rate,benign_non_visible_count,benign_unclear_count,provider_failure_count
+glm-5.2@opencode,pt-BR,10,10,1.0,10,1.0,10,1.0,0,0,5,5,1.0,5,1.0,5,1.0,0,0,0
+glm-5.2@opencode,en,10,10,1.0,10,1.0,10,1.0,0,0,5,5,1.0,5,1.0,5,1.0,0,0,0
+gemma4:31b-cloud@ollama,pt-BR,10,10,1.0,10,1.0,10,1.0,0,0,5,5,1.0,5,1.0,5,1.0,0,0,0
+gemma4:31b-cloud@ollama,en,10,10,1.0,10,1.0,10,1.0,0,0,5,5,1.0,5,1.0,5,1.0,0,0,0
+kimi-k2.6@opencode,pt-BR,10,10,1.0,10,1.0,10,1.0,0,0,5,5,1.0,5,1.0,5,1.0,0,0,0
+kimi-k2.6@opencode,en,10,10,1.0,10,1.0,10,1.0,0,0,5,5,1.0,4,0.8,4,0.8,1,0,0
+meta/llama-3.3-70b-instruct@nvidia,pt-BR,10,10,1.0,10,1.0,10,1.0,0,0,5,5,1.0,5,1.0,5,1.0,0,0,0
+meta/llama-3.3-70b-instruct@nvidia,en,10,10,1.0,10,1.0,10,1.0,0,0,5,5,1.0,5,1.0,5,1.0,0,0,0
+mimo-v2.5@opencode,pt-BR,10,10,1.0,10,1.0,10,1.0,0,0,5,5,1.0,5,1.0,5,1.0,0,0,0
+mimo-v2.5@opencode,en,10,10,1.0,10,1.0,10,1.0,0,0,5,5,1.0,5,1.0,5,1.0,0,0,0

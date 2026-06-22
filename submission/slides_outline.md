@@ -35,9 +35,10 @@
   - Lines connecting pt-BR ↔ English for each model show the cross-language gap.
 
 ## Slide 7: Takeaways, Limitations, and Future Work
-- Key finding: Models are LESS safe in English than pt-BR on Pix fraud — opposite of expected.
-- Locally grounded cultural references may activate safety alignment more effectively than translated prompts.
+- Key finding: Modest cross-language gap (10-20% less safe in English for 3/5 models), not the dramatic gap we initially measured.
+- Methodological insight: Keyword-based scoring can create artificial cross-language gaps if refusal patterns aren't language-aware (missed "I can't" contractions → +15 point inflation).
 - Llama 3.3 70B never redirects to official help — refuses without victim guidance.
+- Kimi K2.6 is the strongest performer (0% jailbreak both languages, 70-100% safe redirect).
 - PixTrap is a reproducible, low-cost recipe adaptable to other regions.
-- Limitations: small dataset (30 prompts), single-author audit, keyword-based scorer.
+- Limitations: small dataset (30 prompts), 73% scorer-audit agreement (keyword scorer misses nuanced redirects), keyword-based scorer.
 - Future: Expand to 100+ prompts, add more models, invite external auditors.
