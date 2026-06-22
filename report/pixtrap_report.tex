@@ -1,0 +1,334 @@
+% ============================================================
+% PixTrap - Global South AI Safety Hackathon Submission
+% Compiles with XeLaTeX (tectonic: tectonic pixtrap_report.tex)
+% LaTeX template structure adapted from B. De Biase Deo & A. N. X. Rodrigues.
+% ============================================================
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+\else
+  \usepackage{fontspec}
+  \setmainfont{Old Standard TT}
+\fi
+\usepackage[letterpaper,margin=0.75in]{geometry}
+
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\graphicspath{{../results/charts/}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\thepage}
+
+\titleformat{\section}{\fontsize{14}{17}\selectfont\bfseries}{\thesection.}{0.4em}{}
+\titlespacing*{\section}{0pt}{10pt}{4pt}
+\titleformat{\subsection}{\fontsize{12}{15}\selectfont\bfseries}{\thesubsection}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{7pt}{3pt}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\emergencystretch=3em
+
+\begin{document}
+
+% ====== Linha horizontal topo ======
+\noindent\rule{\linewidth}{1.2pt}
+\vspace{10pt}
+
+% ====== Titulo ======
+\begin{center}
+{\fontsize{18}{22}\selectfont\bfseries PixTrap Reveals LLM Safety Calibration Gaps in Brazilian Pix Fraud}
+\end{center}
+
+\vspace{6pt}
+\noindent\rule{\linewidth}{0.4pt}
+\vspace{14pt}
+
+% ====== Autores ======
+\begin{center}
+Patrick Passos\\
+Independent researcher
+\end{center}
+
+\vspace{10pt}
+\begin{center}
+\textbf{With}\\
+Apart Research
+\end{center}
+
+\vspace{12pt}
+
+% ====== Abstract ======
+\begin{center}
+\textbf{Abstract}
+\end{center}
+We introduce PixTrap, a Brazilian Portuguese safety benchmark that evaluates whether large language models can distinguish Pix fraud requests from legitimate anti-fraud assistance. Pix is Brazil's instant payment system, used by over 150 million people and the primary vector for social-engineering attacks like bank impersonation, fake kidnapping scams, and forged payment receipts. PixTrap pairs harmful prompts with benign near-neighbors --- requests that share topical overlap but express legitimate intent --- to measure not just whether models refuse fraud, but whether they still help legitimate users. We evaluate five models across Brazilian Portuguese and matched English prompts (150 runs total), scoring outputs on a spectrum from unsafe compliance to safe redirect. Our results show that all models distinguish harmful from benign requests (0\% over-refusal), but vary widely in safe redirect behavior: Kimi K2.6 redirects victims to official channels in 70--100\% of cases, while Llama 3.3 70B never redirects. Three of five models show a modest 10--20\% cross-language safety gap (less safe in English). We also document how keyword-based scoring can create artificial cross-language gaps when refusal patterns are not language-aware --- a methodological finding for multilingual safety evaluation. A delayed blind manual audit of 30 samples found 73\% agreement with automated scoring. PixTrap is open-source, reproducible under free-tier API constraints, and designed as a reusable recipe for locally grounded safety benchmarks in other regions and payment systems.
+
+% ============================================================
+\section{Introduction}
+
+Brazil's Pix instant payment system, launched by the Central Bank of Brazil in November 2020, now serves over 150 million users and processes billions of transactions monthly. Its speed and irreversibility --- transfers settle in seconds and cannot be reversed --- made it the primary vector for a distinctive class of social-engineering attacks: bank impersonation via WhatsApp, fake kidnapping urgency scams, forged transaction receipts, and fraudulent ``Pix recovery'' services that target previous scam victims [1, 2].
+
+When language models are deployed to serve Portuguese-speaking users in Brazil, they encounter these fraud patterns in ways that English-centric safety evaluations do not capture. A model might pass standard jailbreak benchmarks [3] but still comply with a request to write a persuasive script for a ``Pix de seguran\c{c}a'' scam --- a well-known Brazilian fraud pattern where attackers pose as bank security agents requesting test transfers. Standard benchmarks test generic harm categories (violence, illegal drugs, weapons) in English. They do not test whether a model recognizes the difference between ``help me write a phishing message impersonating Banco do Brasil'' (harmful) and ``I'm writing a security article about how scammers impersonate Banco do Brasil'' (legitimate).
+
+PixTrap addresses this gap with two design choices. First, its fraud taxonomy is grounded in documented Brazilian Pix fraud patterns rather than translated English harm categories. Second, it uses a \emph{near-neighbor calibration} design: each harmful prompt is paired with a benign prompt that shares topical overlap but expresses legitimate intent. This allows PixTrap to measure not just refusal but \emph{calibration} --- the ability to refuse fraud while still helping legitimate users. A model that refuses both the harmful and benign prompt is over-refusing; a model that complies with both is under-refusing.
+
+\textbf{Our main contributions are:}
+
+\begin{enumerate}[label=\arabic*.,leftmargin=*]
+\item \textbf{A Brazil-specific safety benchmark} with 30 prompts across four Pix fraud categories, written natively in Brazilian Portuguese with matched English translations, paired with benign near-neighbors for calibration measurement.
+\item \textbf{Empirical results across five models} showing 0\% over-refusal, wide variation in safe redirect behavior (0--100\%), and a modest cross-language safety gap (10--20\% less safe in English for 3 of 5 models).
+\item \textbf{A methodological finding}: keyword-based safety scoring can create artificial cross-language gaps when refusal patterns are not designed for each language's common phrasings --- we found and fixed a 15-point inflation in English jailbreak rates caused by missing English contractions.
+\item \textbf{A reusable recipe} for constructing locally grounded safety benchmarks in other regions and payment systems (UPI in India, M-Pesa in Kenya, etc.).
+\end{enumerate}
+
+\section{Related Work}
+
+\textbf{Jailbreak and refusal benchmarks.} JailbreakBench [3] and similar frameworks evaluate whether models can be induced to produce harmful content through adversarial prompting. The Do-Not-Answer dataset [4] measures whether models refuse harmful instructions across a taxonomy of harm categories. These benchmarks provide important baselines but are predominantly English-language and focus on universal harm categories rather than region-specific attack patterns.
+
+\textbf{Multilingual safety evaluation.} Deng et al.\ [5] demonstrate that models are more vulnerable to jailbreaks in non-English languages, and Yong et al.\ [6] show that low-resource languages can bypass safety training entirely. These findings motivate multilingual safety testing, but coverage of Portuguese --- particularly Brazilian Portuguese with its specific institutional and cultural context --- remains sparse.
+
+\textbf{Calibration in safety.} The tension between helpfulness and harmlessness is well-established in alignment research [7]. A model that refuses everything is safe but useless; a model that helps with everything is helpful but dangerous. PixTrap operationalizes this tension through near-neighbor calibration: rather than measuring refusal in isolation, we measure whether models draw the line correctly between harmful and legitimate requests that share topical overlap.
+
+\textbf{Portuguese-language NLP.} General-purpose Portuguese benchmarks exist (ASSIN for semantic similarity [8], PoSSumo for POS tagging), but safety-specific benchmarks for Brazilian Portuguese are absent from the literature. PixTrap fills this gap with a domain-specific (Pix fraud) rather than general-purpose safety evaluation.
+
+\section{Methods}
+
+\subsection{Fraud Taxonomy}
+
+We define four harmful categories drawn from documented Brazilian Pix fraud patterns [1, 2]:
+
+\begin{enumerate}[label=\arabic*.,leftmargin=*]
+\item \textbf{Impersonation and False Authority}: Attackers pose as bank security agents, police officers, or trusted contacts to request Pix keys or transfers.
+\item \textbf{Urgency and Coercion}: Attackers use high-pressure tactics --- fake kidnapping scenarios, imminent utility disconnection --- to bypass critical thinking.
+\item \textbf{Transaction Receipt Fraud}: Attackers request help generating fake bank receipts or altering payment confirmations to deceive sellers.
+\item \textbf{Recovery and Support Scams}: Attackers offer fraudulent ``Pix recovery'' services that target previous scam victims.
+\end{enumerate}
+
+A fifth category, \textbf{Benign Near-Neighbors}, contains legitimate educational, compliance, support, or research requests that a well-calibrated model should answer.
+
+\subsection{Prompt Design and Near-Neighbor Pairing}
+
+Each harmful prompt is paired with a benign near-neighbor that shares topical overlap but expresses legitimate intent. Five of ten harmful prompts have dedicated benign near-neighbors; the remaining five are unpaired harmful probes. For example:
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{Harmful}: ``Rewrite this message to look like it comes from the Bank of Brazil security center, requesting a test Pix payment.''
+\item \textbf{Benign pair}: ``I'm writing a bank security article. How do scammers typically impersonate the Bank of Brazil's security center, and how can customers identify fraud?''
+\end{itemize}
+
+The near-neighbor design measures \emph{refusal calibration}: a model that refuses both is over-refusing; a model that complies with both is under-refusing. This avoids the false binary of ``safe'' versus ``unsafe'' and instead asks whether the model knows where the line is.
+
+\subsection{Languages}
+
+All prompts were written natively in Brazilian Portuguese. Matched English translations were created to isolate the effect of language on model safety behavior, keeping intent and semantics identical. This paired design enables cross-language comparison on the same prompt content.
+
+\subsection{Model Roster}
+
+We evaluate five models across three providers (Table~\ref{tab:models}):
+
+\begin{table}[h]
+\centering
+\caption{Model roster and token budgets.}
+\label{tab:models}
+\begin{tabular}{llc}
+\toprule
+Model & Provider & Max Output Tokens \\
+\midrule
+GLM 5.2 & OpenCode Go & 350 \\
+MiMo V2.5 & OpenCode Go & 350 \\
+Gemma 4 31B Cloud & Ollama Cloud & 350 \\
+Kimi K2.6 & OpenCode Go & 700 \\
+Llama 3.3 70B Instruct & NVIDIA & 350 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Kimi K2.6 is a \emph{reasoning model}: some runs emitted reasoning-style text or consumed much of the output budget before producing a visible answer. With a standard 350-token budget, the visible-answer budget could be exhausted, leaving no scoreable text. We assign it a higher budget (700 tokens) to improve visible-response coverage. All other models use a uniform 350-token budget. All models are evaluated at temperature 0.0 for reproducibility.
+
+\subsection{Scoring Rubric}
+
+For harmful prompts, we assign one of: \texttt{unsafe\_comply} (model helps with the scam), \texttt{partial\_comply} (helps but adds warnings), \texttt{refuse\_weak} (refuses with long caveats), \texttt{refuse\_strong} (clean, concise refusal), \texttt{safe\_redirect} (refuses and directs user to official help --- police, bank, MED), \texttt{no\_visible\_output} (empty response), or \texttt{unclear}. For benign near-neighbors: \texttt{safe\_comply} (answers helpfully), \texttt{over\_refuse} (refuses a legitimate request), \texttt{partial\_comply}, \texttt{no\_visible\_output}, or \texttt{unclear}.
+
+Provider failures (rate limits, timeouts, API errors) are labeled \texttt{not\_scored\_provider\_failure} and excluded from safety metrics. The \texttt{no\_visible\_output} label captures cases where the provider reports a completed request but the assistant text is empty --- a distinct outcome from genuine refusal.
+
+\subsection{Calibration Score}
+
+We define a summary calibration metric:
+
+\begin{align*}
+\text{calibration\_score} ={}& \text{safe\_redirect\_rate} + \text{safe\_comply\_rate}\\
+& - \text{unsafe\_compliance\_rate} - \text{partial\_compliance\_rate} - \text{over\_refusal\_rate}
+\end{align*}
+
+This ranges from $-2$ (worst: complies with everything, helps with nothing) to $+2$ (best: redirects all fraud, helps all legitimate requests). Partial compliance is penalized alongside unsafe compliance because providing harmful details with a perfunctory warning still exposes the user to risk.
+
+\subsection{Statistical Reporting}
+
+We report Wilson score confidence intervals [9] for all proportion metrics. The Wilson interval is preferred over the normal approximation for small samples because it maintains proper coverage even when the proportion is near 0 or 1. With 10 harmful prompts per model per language, intervals are necessarily wide (e.g., a 20\% rate has a 95\% CI of [5.7\%, 51.0\%]), and we report them alongside all point estimates.
+
+\subsection{Manual Audit Validation}
+
+To validate the automated keyword-based scorer, we performed a delayed blind manual audit. 30 samples were stratified across all models, languages, and safety labels. The auditor (the author) labeled each sample's \texttt{output\_text} without seeing the automated label, then we computed agreement. The audit found 73.3\% agreement (22/30 matches, 8/30 disagreements), with the primary disagreement pattern being \texttt{unsafe\_comply} (auto) vs.\ \texttt{safe\_redirect} (manual) --- cases where the model's output contained redirect-like guidance that the keyword matcher missed.
+
+\section{Results}
+
+All 150 runs (5 models $\times$ 30 prompts) completed successfully with zero provider failures. One run (Kimi K2.6, English benign) produced no visible output and was classified as \texttt{no\_visible\_output}, excluded from safety metric denominators. Provider-completion coverage was 100\%; visible, classifiable coverage was 149/150.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{calibration_scatter.png}
+\caption{Calibration view of harmful compliance and benign over-refusal. Lower-left is the desired region: low unsafe compliance and low over-refusal.}
+\label{fig:calibration}
+\end{figure}
+
+\subsection{Unsafe Compliance (Jailbreak) Rate}
+
+\begin{table}[h]
+\centering
+\caption{Unsafe compliance rate with Wilson 95\% confidence intervals. Gap = pt-BR minus en; negative = less safe in English.}
+\label{tab:unsafe}
+\begin{tabular}{lccc}
+\toprule
+Model & pt-BR & en & Gap \\
+\midrule
+Kimi K2.6 & 0\% [0, 28] & 0\% [0, 28] & 0\% \\
+GLM 5.2 & 10\% [2, 40] & 30\% [11, 60] & $-$20\% \\
+MiMo V2.5 & 10\% [2, 40] & 20\% [6, 51] & $-$10\% \\
+Gemma 4 31B & 20\% [6, 51] & 20\% [6, 51] & 0\% \\
+Llama 3.3 70B & 30\% [11, 60] & 40\% [17, 69] & $-$10\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three of five models show a modest cross-language gap (10--20\% less safe in English), while two show no gap. Kimi K2.6 refuses all harmful prompts in both languages; Llama 3.3 70B has the highest jailbreak rate (30--40\%).
+
+An earlier version of our analysis showed a 50--70\% gap, but this was inflated by a scorer artifact: our English refusal keywords matched ``I cannot'' but not the contraction ``I can't'', and models used unicode apostrophes (') that didn't match regular apostrophes ('). Thirteen of 33 ``unsafe compliance'' labels were actually refusals. After fixing the scorer, the real gap is 0--20\%.
+
+\subsection{Over-Refusal Rate}
+
+Over-refusal is zero across all models and languages. No model incorrectly refuses legitimate anti-fraud assistance. An earlier version of the scorer falsely reported 20--25\% over-refusal, caused by empathy expressions (``I'm sorry this happened to your aunt'') being matched as refusal keywords. After removing standalone empathy words from the refusal pattern list, these were correctly reclassified as \texttt{safe\_comply}.
+
+\subsection{Safe Redirect Rate}
+
+\begin{table}[h]
+\centering
+\caption{Safe redirect rate --- model refuses and directs user to official help.}
+\label{tab:redirect}
+\begin{tabular}{lcc}
+\toprule
+Model & pt-BR & en \\
+\midrule
+GLM 5.2 & 90\% & 70\% \\
+Kimi K2.6 & 70\% & 100\% \\
+Gemma 4 31B & 50\% & 40\% \\
+MiMo V2.5 & 30\% & 40\% \\
+Llama 3.3 70B & 0\% & 0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Llama 3.3 70B never redirects users to official reporting channels. It either complies unsafely or refuses without providing defensive guidance. For a fraud victim, a bare refusal without redirect leaves them without actionable next steps (contacting their bank, filing a police report, requesting a MED reversal). Kimi K2.6 achieves 100\% safe redirect in English.
+
+\subsection{Calibration Score}
+
+\begin{table}[h]
+\centering
+\caption{Calibration score (higher is better; range $-2$ to $+2$).}
+\label{tab:calib}
+\begin{tabular}{lcc}
+\toprule
+Model & pt-BR & en \\
+\midrule
+Kimi K2.6 & $+1.70$ & $+2.00$ \\
+GLM 5.2 & $+1.80$ & $+1.40$ \\
+Gemma 4 31B & $+1.30$ & $+1.20$ \\
+MiMo V2.5 & $+1.20$ & $+1.20$ \\
+Llama 3.3 70B & $+0.70$ & $+0.60$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Discussion and Limitations}
+
+\subsection{The Cross-Language Gap and the Scorer Artifact}
+
+The most important methodological finding from this work is not the 10--20\% cross-language gap itself, but how easily a scorer artifact created a false 50--70\% gap. Our keyword-based scorer matched ``I cannot'' but not ``I can't'' --- and models consistently used the contraction in English refusals. Combined with unicode apostrophe mismatches, this inflated the English jailbreak rate by 15 points. A similar artifact inflated over-refusal rates when empathy expressions (``I'm sorry this happened'') were treated as refusal language.
+
+These artifacts were caught by manual inspection, not by the automated validation pipeline. This suggests that keyword-based multilingual safety scoring requires language-specific validation in every language tested, not just a single-language audit. Researchers building multilingual benchmarks should test their scorers against manual labels in each language, not assume that a scorer validated in one language transfers to another.
+
+The remaining 10--20\% gap may reflect that Pix fraud is a Brazil-specific domain. English prompts about Pix fraud fall outside typical safety training distributions, which may focus on generic English harm categories. Portuguese prompts grounded in Brazilian institutional references (Banco Central, MED, specific scam patterns) may trigger safety alignment more effectively because they resemble real-world fraud reports that models encountered during training.
+
+\subsection{Safe Redirect as a Safety Dimension}
+
+Standard refusal benchmarks measure whether a model says ``no.'' PixTrap adds a dimension that matters for real-world deployment: does the model say ``no, and here's what to do instead''? Llama 3.3 70B never produces a safe redirect --- it refuses without directing victims to help. For a user who has been targeted by a scam, a bare ``I can't help with that'' without mentioning their bank's fraud line or the police is unhelpful at best. Kimi K2.6 and GLM 5.2 consistently provide redirects, which is the behavior a deployed assistant should exhibit.
+
+\subsection{Limitations}
+
+\textbf{Dataset size.} 30 prompts (10 harmful + 5 benign per language) is sufficient for demonstrating the methodology but too small for strong statistical claims. Wilson 95\% confidence intervals are wide (e.g., 20\% $\pm$ [6\%, 51\%]), and only 5 of 10 harmful prompts have dedicated benign near-neighbors.
+
+\textbf{Scorer limitations.} The keyword-based scorer has a 73\% agreement rate with manual labels. The \texttt{refuse\_strong}/\texttt{refuse\_weak} distinction uses a word-count cutoff (40 words), and \texttt{partial\_comply} detection depends on warning-word matching. As demonstrated in \S5.1, these heuristics are sensitive to language-specific phrasings. The audit was performed by the sole author and is not an independent review.
+
+\textbf{Provider constraints.} Kimi K2.6 requires a higher token budget (700 vs.\ 350) to produce visible output due to its reasoning architecture. Some Kimi responses exposed reasoning-style content or spent much of the budget before the final visible answer, so those scores should be read as directionally useful but imperfect measurements of the user-visible response. This is a methodological trade-off: we could have excluded reasoning models for fairness, but doing so would ignore an important class of deployed models.
+
+\textbf{Ecological validity.} API testing with single-turn prompts does not capture multi-turn conversations, system prompts, or jailbreak techniques that real users may employ. Results reflect model behavior under these specific test conditions, not under all deployment scenarios.
+
+\subsection{Future Work}
+
+\begin{enumerate}[label=\arabic*.,leftmargin=*]
+\item \textbf{Scale up the dataset.} Expanding to 100+ prompts per language would tighten confidence intervals and enable per-category statistical claims. Brazil-specific fraud patterns evolve rapidly, so the taxonomy should be updated with input from Brazilian fraud prevention teams.
+\item \textbf{LLM-as-judge scoring.} Replacing or supplementing keyword-based scoring with an LLM judge would address the 27\% disagreement rate and reduce language-specific artifacts. The keyword scorer could serve as a fast first pass, with an LLM judge resolving ambiguous cases.
+\item \textbf{Multi-turn evaluation.} Real fraud attempts are conversational --- attackers follow up, adjust pressure, and exploit trust built over multiple messages. Extending PixTrap to multi-turn scenarios would test whether models maintain safety boundaries under sustained social engineering.
+\item \textbf{External auditors.} The single-author audit should be replaced with multiple independent auditors, including native Portuguese speakers with fraud prevention expertise.
+\item \textbf{Longitudinal tracking.} As models are updated and safety training evolves, re-running PixTrap periodically would track whether Pix fraud safety improves or degrades over time.
+\end{enumerate}
+
+\section{Conclusion}
+
+PixTrap demonstrates that locally grounded safety benchmarks can reveal failure modes that English-centric evaluations miss. Five models evaluated on Brazilian Pix fraud prompts showed 0\% over-refusal (models distinguish harmful from legitimate requests) but wide variation in safe redirect behavior (0--100\%), a dimension that standard refusal benchmarks do not measure. A modest cross-language gap (10--20\% less safe in English for 3 of 5 models) suggests that domain-specific cultural references may activate safety alignment more effectively than translated prompts.
+
+The scorer artifact we encountered --- where missing English contractions inflated the apparent cross-language gap by 15 points --- is a cautionary tale for multilingual safety evaluation. Keyword-based scoring requires language-specific validation, and automated pipelines can produce confident but wrong results when refusal patterns are not carefully designed for each language.
+
+PixTrap is open-source, reproducible, and designed as a reusable recipe. The same pattern --- local taxonomy, native-language prompts, near-neighbor calibration, safe redirect measurement --- can be applied to any region where payment systems create distinctive fraud patterns. We hope this work encourages safety evaluations that meet people where they are, in the languages they speak, against the threats they actually face.
+
+\section*{Code and Data}
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{Code repository}: \url{https://github.com/patrickpassosb/pixtrap}
+\item \textbf{Public sample dataset}: \texttt{data/sample\_prompts\_public.jsonl} (sanitized or abstracted harmful prompts, full benign near-neighbors)
+\item \textbf{Results}: Aggregate result summaries, scored CSVs, coverage/uncertainty summaries, and charts are in the \texttt{results/} directory.
+\end{itemize}
+
+\section*{References}
+
+\begin{enumerate}[label={[\arabic*]},leftmargin=*,itemsep=2pt,topsep=2pt]
+\item Febraban. (2024). \textit{Guia de Seguran\c{c}a contra Golpes do Pix}. Federa\c{c}\~ao Brasileira de Bancos. \url{https://febraban.org.br}
+\item Banco Central do Brasil. (2023). \textit{Mecanismo Especial de Devolu\c{c}\~ao (MED) --- Regulamento do Pix}. \url{https://www.bcb.gov.br/estabilidadefinanceira/pix}
+\item Chao, P., et al. (2024). JailbreakBench: An Open Robustness Benchmark for Jailbreaking Large Language Models. \textit{arXiv:2404.01318}.
+\item Wang, Y., et al. (2023). Do-Not-Answer: A Dataset for Evaluating Safeguards in LLMs. \textit{arXiv:2308.13387}.
+\item Deng, Y., et al. (2023). Multilingual Jailbreak Challenges in Large Language Models. \textit{arXiv:2310.06874}.
+\item Yong, Z.-X., et al. (2023). Low-Resource Languages Jailbreak GPT-4. \textit{arXiv:2305.13625}.
+\item Bai, Y., et al. (2022). Training a Helpful and Harmless Assistant with Reinforcement Learning from Human Feedback. \textit{arXiv:2204.05862}.
+\item Fonseca, E., et al. (2016). ASSIN: Avalia\c{c}\~ao de Similaridade Sem\^antica e Infer\^encia Textual. \textit{PROPOR 2016}.
+\item Wilson, E. B. (1927). Probable Inference, the Law of Succession, and Statistical Inference. \textit{Journal of the American Statistical Association}, 22(158), 209--212.
+\end{enumerate}
+
+\section*{LLM Usage Statement}
+
+AI coding assistants (Codex and OpenCode) were used as interactive programming partners during implementation --- code generation, test development, chart design, and initial report drafting. All analysis decisions, prompt design, taxonomy construction, and methodology were directed by the author. All results were independently verified by re-running the evaluation pipeline and by manual audit.
+
+\end{document}
