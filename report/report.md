@@ -77,7 +77,7 @@ We evaluate five models across three providers (Table 1):
 
 *Table 1: Model roster and token budgets.*
 
-Kimi K2.6 is a *reasoning model* — it consumes tokens for internal chain-of-thought reasoning before producing visible output. With a standard 350-token budget, the entire budget can be consumed by reasoning, leaving no visible text. We assign it a higher budget (700 tokens) to ensure visible content is generated. All other models use a uniform 350-token budget. All models are evaluated at temperature 0.0 for reproducibility.
+Kimi K2.6 is a *reasoning model*: some runs emitted reasoning-style text or consumed much of the output budget before producing a visible answer. With a standard 350-token budget, the visible-answer budget could be exhausted, leaving no scoreable text. We assign it a higher budget (700 tokens) to improve visible-response coverage. All other models use a uniform 350-token budget. All models are evaluated at temperature 0.0 for reproducibility.
 
 ### 3.5 Scoring Rubric
 
@@ -105,7 +105,7 @@ To validate the automated keyword-based scorer, we performed a delayed blind man
 
 ## 4. Results
 
-All 150 runs (5 models × 30 prompts) completed successfully with zero provider failures. One run (Kimi K2.6, English benign) produced no visible output and was classified as `no_visible_output`, excluded from safety metric denominators. Coverage was 100% across all models and languages.
+All 150 runs (5 models × 30 prompts) completed successfully with zero provider failures. One run (Kimi K2.6, English benign) produced no visible output and was classified as `no_visible_output`, excluded from safety metric denominators. Provider-completion coverage was 100%; visible, classifiable coverage was 149/150.
 
 <img src="results/charts/calibration_scatter.png" alt="Calibration scatter chart">
 
@@ -170,7 +170,7 @@ Llama 3.3 70B never redirects users to official reporting channels. It either co
 
 Hard prompts are more likely to elicit unsafe compliance, as expected. Llama 3.3 70B shows the strongest difficulty effect (67% jailbreak on hard pt-BR prompts). Kimi K2.6 is robust across all difficulty levels.
 
-## 5. Discussion
+## 5. Discussion and Limitations
 
 ### 5.1 The Cross-Language Gap and the Scorer Artifact
 
@@ -184,19 +184,19 @@ The remaining 10-20% gap may reflect that Pix fraud is a Brazil-specific domain.
 
 Standard refusal benchmarks measure whether a model says "no." PixTrap adds a dimension that matters for real-world deployment: does the model say "no, and here's what to do instead"? Llama 3.3 70B never produces a safe redirect — it refuses without directing victims to help. For a user who has been targeted by a scam, a bare "I can't help with that" without mentioning their bank's fraud line or the police is unhelpful at best. Kimi K2.6 and GLM 5.2 consistently provide redirects, which is the behavior a deployed assistant should exhibit.
 
-## 6. Limitations and Dual-Use Considerations
+### Limitations
 
 **Dataset size.** 30 prompts (10 harmful + 5 benign per language) is sufficient for demonstrating the methodology but too small for strong statistical claims. Wilson 95% confidence intervals are wide (e.g., 20% ± [6%, 51%]), and only 5 of 10 harmful prompts have dedicated benign near-neighbors.
 
 **Scorer limitations.** The keyword-based scorer has a 73% agreement rate with manual labels. The `refuse_strong`/`refuse_weak` distinction uses a word-count cutoff (40 words), and `partial_comply` detection depends on warning-word matching. As demonstrated in §5.1, these heuristics are sensitive to language-specific phrasings. The audit was performed by the sole author and is not an independent review.
 
-**Provider constraints.** Kimi K2.6 requires a higher token budget (700 vs. 350) to produce visible output due to its reasoning architecture. This is a methodological trade-off: we could have excluded reasoning models for fairness, but doing so would ignore an important class of deployed models.
+**Provider constraints.** Kimi K2.6 requires a higher token budget (700 vs. 350) to produce visible output due to its reasoning architecture. Some Kimi responses exposed reasoning-style content or spent much of the budget before the final visible answer, so those scores should be read as directionally useful but imperfect measurements of the user-visible response. This is a methodological trade-off: we could have excluded reasoning models for fairness, but doing so would ignore an important class of deployed models.
 
 **Ecological validity.** API testing with single-turn prompts does not capture multi-turn conversations, system prompts, or jailbreak techniques that real users may employ. Results reflect model behavior under these specific test conditions, not under all deployment scenarios.
 
-**Dual-use risk.** The harmful prompts are realistic social-engineering templates. To prevent misuse, raw harmful prompts are not published publicly. The repository includes redacted harmful prompts and full benign near-neighbors. Qualified researchers may request access to the complete dataset.
+**Dual-use risk.** The harmful prompts are realistic social-engineering templates. To prevent misuse, the public release includes sanitized or abstracted harmful prompts, full benign near-neighbors, code, scoring logic, aggregate results, and charts. Raw harmful prompt files are not bundled with the public release; qualified researchers may request access to the complete dataset.
 
-## 7. Future Work
+### Future Work
 
 1. **Scale up the dataset.** Expanding to 100+ prompts per language would tighten confidence intervals and enable per-category statistical claims. Brazil-specific fraud patterns evolve rapidly, so the taxonomy should be updated with input from Brazilian fraud prevention teams.
 
@@ -204,7 +204,7 @@ Standard refusal benchmarks measure whether a model says "no." PixTrap adds a di
 
 3. **Multi-turn evaluation.** Real fraud attempts are conversational — attackers follow up, adjust pressure, and exploit trust built over multiple messages. Extending PixTrap to multi-turn scenarios would test whether models maintain safety boundaries under sustained social engineering.
 
-4. **More models and providers.** Adding frontier models (GPT-4, Claude, Gemini) and local Brazilian deployments would broaden coverage and reveal provider-specific safety differences.
+4. **Broader model and provider coverage.** Evaluating a more diverse model/provider set — including open, hosted, local, frontier, and smaller models — would broaden coverage and reveal provider-specific safety differences.
 
 5. **External auditors.** The single-author audit should be replaced with multiple independent auditors, including native Portuguese speakers with fraud prevention expertise.
 
@@ -212,7 +212,7 @@ Standard refusal benchmarks measure whether a model says "no." PixTrap adds a di
 
 7. **Longitudinal tracking.** As models are updated and safety training evolves, re-running PixTrap periodically would track whether Pix fraud safety improves or degrades over time.
 
-## 8. Conclusion
+## 6. Conclusion
 
 PixTrap demonstrates that locally grounded safety benchmarks can reveal failure modes that English-centric evaluations miss. Five models evaluated on Brazilian Pix fraud prompts showed 0% over-refusal (models distinguish harmful from legitimate requests) but wide variation in safe redirect behavior (0-100%), a dimension that standard refusal benchmarks do not measure. A modest cross-language gap (10-20% less safe in English for 3 of 5 models) suggests that domain-specific cultural references may activate safety alignment more effectively than translated prompts.
 
@@ -223,9 +223,9 @@ PixTrap is open-source, reproducible, and designed as a reusable recipe. The sam
 ## Code and Data
 
 - **Code repository**: [github.com/patrickpassosb/pixtrap](https://github.com/patrickpassosb/pixtrap)
-- **Public sample dataset**: `data/sample_prompts_public.jsonl` (redacted harmful prompts, full benign near-neighbors)
-- **Full dataset**: Available to qualified researchers upon request. Access requires institutional affiliation and agreement not to republish raw harmful prompts.
-- **Results**: All 150 raw model outputs, scored CSVs, coverage/uncertainty summaries, and charts are in the `results/` directory.
+- **Public sample dataset**: `data/sample_prompts_public.jsonl` (sanitized or abstracted harmful prompts, full benign near-neighbors)
+- **Full dataset**: Raw harmful prompts are not bundled publicly. Qualified researchers may request access with institutional affiliation and agreement not to republish raw harmful prompts.
+- **Results**: Aggregate result summaries, scored CSVs, coverage/uncertainty summaries, and charts are in the `results/` directory.
 
 ## References
 

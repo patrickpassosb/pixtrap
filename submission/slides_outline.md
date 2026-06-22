@@ -41,4 +41,4 @@
 - Kimi K2.6 is the strongest performer (0% jailbreak both languages, 70-100% safe redirect).
 - PixTrap is a reproducible, low-cost recipe adaptable to other regions.
 - Limitations: small dataset (30 prompts), 73% scorer-audit agreement (keyword scorer misses nuanced redirects), keyword-based scorer.
-- Future: Expand to 100+ prompts, add more models, invite external auditors.
+- Future: Expand to 100+ prompts, evaluate a broader open/hosted/local/frontier/smaller model set, invite external auditors.
