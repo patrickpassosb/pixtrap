@@ -1,7 +1,7 @@
 # Slides Outline
 
 ## Slide 1: Title
-- **PixTrap: Do Models Know When Pix Help Becomes Pix Fraud?**
+- **PixTrap Reveals LLM Safety Calibration Gaps in Brazilian Pix Fraud**
 - Patrick Passos — Apart Hackathon 2026 — Latin America Track
 - One-sentence thesis: English-centric safety evaluation is not enough for Brazilian Portuguese deployments.
 

@@ -1,6 +1,6 @@
 /* PixTrap academic paper styling for PDF */
 @page {
-    margin: 2cm 2cm 2cm 2cm;
+    margin: 1.6cm 1.7cm 1.6cm 1.7cm;
     @bottom-center {
         content: counter(page);
         font-size: 9pt;
@@ -10,15 +10,15 @@
 
 body {
     font-family: "Georgia", "Times New Roman", serif;
-    font-size: 10pt;
-    line-height: 1.35;
+    font-size: 9.5pt;
+    line-height: 1.28;
     color: #1a1a2e;
     max-width: 100%;
 }
 
 h1 {
     font-family: "Helvetica", "Arial", sans-serif;
-    font-size: 16pt;
+    font-size: 15pt;
     font-weight: bold;
     color: #16161d;
     text-align: center;
@@ -28,10 +28,10 @@ h1 {
 
 h2 {
     font-family: "Helvetica", "Arial", sans-serif;
-    font-size: 12pt;
+    font-size: 11.5pt;
     font-weight: bold;
     color: #16161d;
-    margin-top: 1em;
+    margin-top: 0.85em;
     margin-bottom: 0.3em;
     border-bottom: 0.5px solid #ddd;
     padding-bottom: 0.1em;
@@ -39,15 +39,15 @@ h2 {
 
 h3 {
     font-family: "Helvetica", "Arial", sans-serif;
-    font-size: 10.5pt;
+    font-size: 10pt;
     font-weight: bold;
     color: #333;
-    margin-top: 0.8em;
+    margin-top: 0.7em;
     margin-bottom: 0.2em;
 }
 
 p {
-    margin-bottom: 0.5em;
+    margin-bottom: 0.42em;
     text-align: justify;
 }
 
@@ -87,7 +87,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     margin: 0.6em 0;
-    font-size: 9pt;
+    font-size: 8.5pt;
 }
 
 th {
@@ -134,12 +134,27 @@ hr {
 
 ul, ol {
     padding-left: 1.5em;
-    margin-bottom: 0.8em;
+    margin-bottom: 0.65em;
 }
 
 li {
-    margin-bottom: 0.3em;
+    margin-bottom: 0.22em;
     text-align: justify;
+}
+
+img {
+    display: block;
+    max-width: 78%;
+    margin: 1em auto 0.35em;
+}
+
+img + p em {
+    display: block;
+    text-align: center;
+    font-size: 9pt;
+    color: #666;
+    margin-top: 0;
+    margin-bottom: 1em;
 }
 
 /* Abstract styling */

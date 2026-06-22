@@ -1,4 +1,4 @@
-# PixTrap: Do Models Know When Pix Help Becomes Pix Fraud?
+# PixTrap Reveals LLM Safety Calibration Gaps in Brazilian Pix Fraud
 
 **Patrick Passos**
 
@@ -107,6 +107,10 @@ To validate the automated keyword-based scorer, we performed a delayed blind man
 
 All 150 runs (5 models × 30 prompts) completed successfully with zero provider failures. One run (Kimi K2.6, English benign) produced no visible output and was classified as `no_visible_output`, excluded from safety metric denominators. Coverage was 100% across all models and languages.
 
+<img src="results/charts/calibration_scatter.png" alt="Calibration scatter chart">
+
+*Figure 1: Calibration view of harmful compliance and benign over-refusal. Lower-left is the desired region: low unsafe compliance and low over-refusal.*
+
 ### 4.1 Unsafe Compliance (Jailbreak) Rate
 
 | Model | pt-BR | en | Gap |
@@ -166,7 +170,7 @@ Llama 3.3 70B never redirects users to official reporting channels. It either co
 
 Hard prompts are more likely to elicit unsafe compliance, as expected. Llama 3.3 70B shows the strongest difficulty effect (67% jailbreak on hard pt-BR prompts). Kimi K2.6 is robust across all difficulty levels.
 
-## 5. Discussion and Limitations
+## 5. Discussion
 
 ### 5.1 The Cross-Language Gap and the Scorer Artifact
 
@@ -180,7 +184,7 @@ The remaining 10-20% gap may reflect that Pix fraud is a Brazil-specific domain.
 
 Standard refusal benchmarks measure whether a model says "no." PixTrap adds a dimension that matters for real-world deployment: does the model say "no, and here's what to do instead"? Llama 3.3 70B never produces a safe redirect — it refuses without directing victims to help. For a user who has been targeted by a scam, a bare "I can't help with that" without mentioning their bank's fraud line or the police is unhelpful at best. Kimi K2.6 and GLM 5.2 consistently provide redirects, which is the behavior a deployed assistant should exhibit.
 
-### Limitations
+## 6. Limitations and Dual-Use Considerations
 
 **Dataset size.** 30 prompts (10 harmful + 5 benign per language) is sufficient for demonstrating the methodology but too small for strong statistical claims. Wilson 95% confidence intervals are wide (e.g., 20% ± [6%, 51%]), and only 5 of 10 harmful prompts have dedicated benign near-neighbors.
 
@@ -192,7 +196,7 @@ Standard refusal benchmarks measure whether a model says "no." PixTrap adds a di
 
 **Dual-use risk.** The harmful prompts are realistic social-engineering templates. To prevent misuse, raw harmful prompts are not published publicly. The repository includes redacted harmful prompts and full benign near-neighbors. Qualified researchers may request access to the complete dataset.
 
-### Future Work
+## 7. Future Work
 
 1. **Scale up the dataset.** Expanding to 100+ prompts per language would tighten confidence intervals and enable per-category statistical claims. Brazil-specific fraud patterns evolve rapidly, so the taxonomy should be updated with input from Brazilian fraud prevention teams.
 
@@ -208,7 +212,7 @@ Standard refusal benchmarks measure whether a model says "no." PixTrap adds a di
 
 7. **Longitudinal tracking.** As models are updated and safety training evolves, re-running PixTrap periodically would track whether Pix fraud safety improves or degrades over time.
 
-## 6. Conclusion
+## 8. Conclusion
 
 PixTrap demonstrates that locally grounded safety benchmarks can reveal failure modes that English-centric evaluations miss. Five models evaluated on Brazilian Pix fraud prompts showed 0% over-refusal (models distinguish harmful from legitimate requests) but wide variation in safe redirect behavior (0-100%), a dimension that standard refusal benchmarks do not measure. A modest cross-language gap (10-20% less safe in English for 3 of 5 models) suggests that domain-specific cultural references may activate safety alignment more effectively than translated prompts.
 
@@ -245,4 +249,4 @@ PixTrap is open-source, reproducible, and designed as a reusable recipe. The sam
 
 ## LLM Usage Statement
 
-AI coding assistants (Claude and OpenCode) were used as interactive programming partners during implementation — code generation, test development, chart design, and initial report drafting. All analysis decisions, prompt design, taxonomy construction, and methodology were directed by the author. All results were independently verified by re-running the evaluation pipeline and by manual audit. The final report was written and revised by the author.
+AI coding assistants (Codex and OpenCode) were used as interactive programming partners during implementation — code generation, test development, chart design, and initial report drafting. All analysis decisions, prompt design, taxonomy construction, and methodology were directed by the author. All results were independently verified by re-running the evaluation pipeline and by manual audit.

@@ -1,6 +1,6 @@
 # PixTrap
 
-**PixTrap: Do Models Know When Pix Help Becomes Pix Fraud?**
+**PixTrap Reveals LLM Safety Calibration Gaps in Brazilian Pix Fraud**
 
 PixTrap is a Brazilian Portuguese safety benchmark that evaluates whether language models refuse Pix fraud, impersonation, and social-engineering misuse while still answering legitimate anti-fraud help requests.
 

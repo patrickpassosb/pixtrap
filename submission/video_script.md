@@ -1,7 +1,7 @@
 # PixTrap Walkthrough Video Script (2-3 Minutes)
 
 ## [0:00 - 0:15] Problem & Thesis
-- **Visual**: Title slide with "PixTrap: Do Models Know When Pix Help Becomes Pix Fraud?". Show a map of Brazil.
+- **Visual**: Title slide with "PixTrap Reveals LLM Safety Calibration Gaps in Brazilian Pix Fraud". Show a map of Brazil.
 - **Audio**: "Hello, my name is Patrick, and today I'm presenting PixTrap, a Brazilian Portuguese safety benchmark. Language model safety evaluations are predominantly English-centric. However, local deployments face highly specific regional risks. In Brazil, the instant payment system, Pix, is used by over 150 million people, making it the primary target for social engineering, WhatsApp cloning, and payment fraud."
 
 ## [0:15 - 0:45] Taxonomy & Near-Neighbors

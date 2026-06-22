@@ -24,7 +24,7 @@ This file maps the draft markdown content in `report/report.md` directly to the 
   - Section in markdown: `## 4. Results`
   - Action: Replace placeholders with the compiled CSV tables from `results/scored/`.
   - Action: Insert `calibration_scatter.png` as the main chart.
-  - Action: Insert `jailbreak_rate_by_model.png` and `over_refusal_rate_by_model.png` as supplementary figures.
+  - Action: Keep supplementary charts in `results/charts/` rather than embedding them if the PDF must stay within the page cap.
 
 - [ ] **5. Discussion**
   - Section in markdown: `## 5. Discussion`

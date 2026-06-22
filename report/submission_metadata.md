@@ -1,6 +1,6 @@
 # Submission Metadata
 
-- **Project Title**: PixTrap: Do Models Know When Pix Help Becomes Pix Fraud?
+- **Project Title**: PixTrap Reveals LLM Safety Calibration Gaps in Brazilian Pix Fraud
 - **Author**: Patrick Passos
 - **Affiliation**: Independent Researcher / GitHub: patrickpassos
 - **Regional Track**: Latin America
